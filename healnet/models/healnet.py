@@ -199,6 +199,9 @@ class HealNet(nn.Module):
         snn: bool = True,
     ):
         super().__init__()
+        
+        from .healnet import HealNet
+
         assert len(input_channels) == len(input_axes), 'input channels and input axis must be of the same length'
         assert len(input_axes) == modalities, 'input axis must be of the same length as the number of modalities'
 
