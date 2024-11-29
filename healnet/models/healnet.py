@@ -279,14 +279,19 @@ class HealNet(nn.Module):
                 missing: Optional[torch.Tensor] = None,
                 return_embeddings: bool = False
                 ):
-
+        print(len(tensors))
         for i in range(len(tensors)):
+            print('len of tensors:',len(tensors))
+            print('shape of tensor[0]:',tensors[0].shape)
+            print('shape of tensor[1]:',tensors[1].shape)
             data = tensors[i]
+            print('shape of data:',data.shape)
+            
             # sanity checks
             b, *axis, _, device, dtype = *data.shape, data.device, data.dtype
             assert len(axis) == self.input_axes[i], (f'input data for modality {i+1} must hav'
                                                           f' the same number of axis as the input axis parameter')
-
+            print('assert passed')
             # fourier encode for each modality
             if self.fourier_encode_data:
                 pos = torch.linspace(0, 1, axis[0], device = device, dtype = dtype)
