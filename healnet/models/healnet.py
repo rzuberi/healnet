@@ -279,25 +279,47 @@ class HealNet(nn.Module):
                 missing: Optional[torch.Tensor] = None,
                 return_embeddings: bool = False
                 ):
-        print(len(tensors))
+        #print(len(tensors))
         for i in range(len(tensors)):
-            print('len of tensors:',len(tensors))
-            print('shape of tensor[0]:',tensors[0].shape)
-            print('shape of tensor[1]:',tensors[1].shape)
+            #print('len of tensors:',len(tensors))
+            #print('shape of tensor[0]:',tensors[0].shape)
+            #print('shape of tensor[1]:',tensors[1].shape)
             data = tensors[i]
-            print('shape of data:',data.shape)
+            #print('shape of data:',data.shape)
             
             # sanity checks
-            b, *axis, _, device, dtype = *data.shape, data.device, data.dtype
+            #b, *axis, _, device, dtype = *data.shape, data.device, data.dtype
+            b, *axis, device, dtype = *data.shape, data.device, data.dtype
+            #print(b, axis, _, device, dtype)
+            #print(b, axis, device, dtype)
+            #print('axis:',axis,'len of axis:',len(axis))
+            #print('input axes:',self.input_axes, 'len of input axes:',len(self.input_axes))
             assert len(axis) == self.input_axes[i], (f'input data for modality {i+1} must hav'
                                                           f' the same number of axis as the input axis parameter')
-            print('assert passed')
+            #print('assert passed')
             # fourier encode for each modality
             if self.fourier_encode_data:
                 pos = torch.linspace(0, 1, axis[0], device = device, dtype = dtype)
                 enc_pos = fourier_encode(pos, self.max_freq, self.num_freq_bands)
                 enc_pos = rearrange(enc_pos, 'n d -> () n d')
                 enc_pos = repeat(enc_pos, '() n d -> b n d', b = b)
+                #print('data:',data.shape)
+                #print('enc_pos:',enc_pos.shape)
+
+                if self.input_axes[i] == 1:
+                    # For tabular data: [4, 561] -> [4, 561, 1]
+                    data = data.unsqueeze(-1)  # Shape: [4, 561, 1]
+                    # Concatenate along the last dimension
+                    data = torch.cat((data, enc_pos), dim=-1)  # Shape: [4, 561, 6]
+                    #print('data after concat (tabular):', data.shape)
+                elif self.input_axes[i] == 2:
+                    # For image data: [4, 100, 1024] and [4, 100, 5]
+                    data = torch.cat((data, enc_pos), dim=-1)  # Shape: [4, 100, 1029]
+                    #print('data after concat (image):', data.shape)
+                else:
+                    raise ValueError(f'Unsupported input_axes[{i}] = {self.input_axes[i]}')
+        
+
                 data = torch.cat((data, enc_pos), dim = -1)
 
             # concat and flatten axis for each modality
